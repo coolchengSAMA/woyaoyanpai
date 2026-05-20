@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">我要验牌</string>
+    <string name="category_comic">漫画</string>
+    <string name="category_video">视频</string>
+    <string name="category_url">网址</string>
+    <string name="detect_btn">检测并清理</string>
+    <string name="current_clipboard">当前剪贴板</string>
+    <string name="cleaned_result">清理后</string>
+    <string name="original_text">原始</string>
+    <string name="mark_read">标记为已阅</string>
+    <string name="saved">已保存</string>
+    <string name="open_notebook">打开笔记本</string>
+    <string name="notebook_title">笔记本</string>
+    <string name="no_entries">还没有保存记录</string>
+    <string name="no_match">无需清理</string>
+    <string name="copy_success">已复制到剪贴板</string>
+    <string name="delete_confirm">确定要清空此分类的所有记录吗？</string>
+    <string name="clear_all">清空</string>
+    <string name="clipboard_empty">剪贴板为空</string>
+    <string name="accessibility_description">开启后可在后台自动检测并清理剪贴板中的混淆内容。</string>
+</resources>
