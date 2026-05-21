@@ -1,6 +1,8 @@
 package com.yanpai.clipboardcleaner
 
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
@@ -15,26 +17,27 @@ import com.yanpai.clipboardcleaner.viewmodel.HomeViewModel
 class MainActivity : ComponentActivity() {
 
     private val homeViewModel: HomeViewModel by viewModels()
-    private var clipboardListener: (() -> Unit)? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        clipboardListener = {
-            homeViewModel.onClipboardChanged()
-        }
 
         val systemIsDark = (resources.configuration.uiMode and
                 android.content.res.Configuration.UI_MODE_NIGHT_MASK) ==
                 android.content.res.Configuration.UI_MODE_NIGHT_YES
 
+        val prefs = getSharedPreferences("theme", MODE_PRIVATE)
+        val savedTheme = prefs.getBoolean("dark", systemIsDark)
+
         setContent {
-            var isDarkTheme by remember { mutableStateOf(systemIsDark) }
+            var isDarkTheme by remember { mutableStateOf(savedTheme) }
 
             ClipboardCleanerTheme(darkTheme = isDarkTheme) {
                 AppNavGraph(
                     isDarkTheme = isDarkTheme,
-                    onToggleDarkTheme = { isDarkTheme = !isDarkTheme }
+                    onToggleDarkTheme = {
+                        isDarkTheme = !isDarkTheme
+                        prefs.edit().putBoolean("dark", isDarkTheme).apply()
+                    }
                 )
             }
         }
@@ -42,19 +45,19 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
-        clipboardListener?.let {
-            homeViewModel.clipboardMonitor.setOnChangeListener(it)
+        // 注册剪贴板监听（ClipboardMonitor 内部管理 SAM 实例防止泄漏）
+        homeViewModel.clipboardMonitor.setOnChangeListener {
+            homeViewModel.onClipboardChanged()
         }
         homeViewModel.onClipboardChanged()
-        window.decorView.postDelayed({
+        // 延迟再检测一次，确保焦点转移后能读到剪贴板
+        Handler(Looper.getMainLooper()).postDelayed({
             homeViewModel.onClipboardChanged()
         }, 500)
     }
 
     override fun onPause() {
         super.onPause()
-        clipboardListener?.let {
-            homeViewModel.clipboardMonitor.removeChangeListener(it)
-        }
+        homeViewModel.clipboardMonitor.removeChangeListener()
     }
 }

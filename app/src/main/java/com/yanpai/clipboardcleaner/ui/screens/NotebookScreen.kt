@@ -1,8 +1,11 @@
 package com.yanpai.clipboardcleaner.ui.screens
 
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -18,6 +21,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Tab
@@ -27,6 +31,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -43,10 +48,7 @@ import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
-fun NotebookScreen(
-    viewModel: NotebookViewModel,
-    onBack: () -> Unit
-) {
+fun NotebookScreen(viewModel: NotebookViewModel, onBack: () -> Unit) {
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -55,53 +57,38 @@ fun NotebookScreen(
 
     val pagerState = rememberPagerState(pageCount = { 2 })
 
-    // 同步页面位置到 ViewModel
-    val targetTab = if (pagerState.currentPage == 0) "comic" else "video"
-    if (targetTab != uiState.selectedTab) {
-        viewModel.selectTab(targetTab)
+    LaunchedEffect(pagerState.currentPage) {
+        val tab = if (pagerState.currentPage == 0) "comic" else "video"
+        if (tab != uiState.selectedTab) viewModel.selectTab(tab)
     }
 
-    // 单条删除二次确认
+    // 删除确认
     pendingDeleteEntry?.let { entry ->
         AlertDialog(
             onDismissRequest = { pendingDeleteEntry = null },
             title = { Text("删除确认") },
             text = { Text("确定要删除「${entry.cleanedText}」这条记录吗？") },
             confirmButton = {
-                TextButton(onClick = {
-                    viewModel.deleteEntry(entry)
-                    pendingDeleteEntry = null
-                }) {
+                TextButton(onClick = { viewModel.deleteEntry(entry); pendingDeleteEntry = null }) {
                     Text("删除", color = MaterialTheme.colorScheme.error)
                 }
             },
-            dismissButton = {
-                TextButton(onClick = { pendingDeleteEntry = null }) {
-                    Text("取消")
-                }
-            }
+            dismissButton = { TextButton(onClick = { pendingDeleteEntry = null }) { Text("取消") } }
         )
     }
 
-    // 清空确认弹窗
+    // 清空确认
     if (showClearDialog) {
         AlertDialog(
             onDismissRequest = { showClearDialog = false },
             title = { Text("清空确认") },
             text = { Text("确定要清空此分类的所有记录吗？") },
             confirmButton = {
-                TextButton(onClick = {
-                    viewModel.clearCategory(uiState.selectedTab)
-                    showClearDialog = false
-                }) {
+                TextButton(onClick = { viewModel.clearCategory(uiState.selectedTab); showClearDialog = false }) {
                     Text("确定")
                 }
             },
-            dismissButton = {
-                TextButton(onClick = { showClearDialog = false }) {
-                    Text("取消")
-                }
-            }
+            dismissButton = { TextButton(onClick = { showClearDialog = false }) { Text("取消") } }
         )
     }
 
@@ -122,56 +109,63 @@ fun NotebookScreen(
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primary,
                     titleContentColor = MaterialTheme.colorScheme.onPrimary,
-                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary
+                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
+                    actionIconContentColor = MaterialTheme.colorScheme.onPrimary
                 )
             )
         },
-        snackbarHost = { SnackbarHost(snackbarHostState) }
+        snackbarHost = {
+            SnackbarHost(hostState = snackbarHostState) { data ->
+                Snackbar(data, containerColor = MaterialTheme.colorScheme.surface,
+                    contentColor = MaterialTheme.colorScheme.onSurface)
+            }
+        }
     ) { padding ->
-        Column(modifier = Modifier.padding(padding)) {
-            TabRow(selectedTabIndex = pagerState.currentPage) {
+        Column(Modifier.padding(padding)) {
+            // 标签栏
+            TabRow(
+                selectedTabIndex = pagerState.currentPage,
+                containerColor = MaterialTheme.colorScheme.surface,
+                contentColor = MaterialTheme.colorScheme.primary
+            ) {
                 Tab(
                     selected = pagerState.currentPage == 0,
                     onClick = { scope.launch { pagerState.animateScrollToPage(0) } },
-                    text = { Text("漫画(${uiState.comicCount})") }
+                    text = { Text("漫画 (${uiState.comicCount})") }
                 )
                 Tab(
                     selected = pagerState.currentPage == 1,
                     onClick = { scope.launch { pagerState.animateScrollToPage(1) } },
-                    text = { Text("视频(${uiState.videoCount})") }
+                    text = { Text("视频 (${uiState.videoCount})") }
                 )
             }
 
+            // 可左右滑动的页面内容
             HorizontalPager(
                 state = pagerState,
                 beyondBoundsPageCount = 0,
                 modifier = Modifier.fillMaxSize()
             ) { page ->
-                val entries = if (page == 0) uiState.comicEntries else uiState.videoEntries
-                if (entries.isEmpty()) {
-                    Box(modifier = Modifier.fillMaxSize()) {
-                        EmptyState()
-                    }
-                } else {
-                    LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
-                        contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = 4.dp)
-                    ) {
-                        items(
-                            items = entries,
-                            key = { it.id }
-                        ) { entry ->
-                            NoteCard(
-                                entry = entry,
-                                onToggleRead = { viewModel.toggleRead(entry) },
-                                onCopy = {
-                                    viewModel.copyToClipboard(entry.cleanedText)
-                                    scope.launch {
-                                        snackbarHostState.showSnackbar("已复制到剪贴板")
-                                    }
-                                },
-                                onDelete = { pendingDeleteEntry = entry }
-                            )
+                val list = if (page == 0) uiState.comicEntries else uiState.videoEntries
+                Crossfade(targetState = list, animationSpec = tween(250), label = "crossfade") { entries ->
+                    if (entries.isEmpty()) {
+                        Box(Modifier.fillMaxSize()) { EmptyState() }
+                    } else {
+                        LazyColumn(
+                            modifier = Modifier.fillMaxSize(),
+                            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+                        ) {
+                            items(entries, key = { it.id }) { entry ->
+                                NoteCard(
+                                    entry = entry,
+                                    onToggleRead = { viewModel.toggleRead(entry) },
+                                    onCopy = {
+                                        viewModel.copyToClipboard(entry.cleanedText)
+                                        scope.launch { snackbarHostState.showSnackbar("已复制到剪贴板") }
+                                    },
+                                    onDelete = { pendingDeleteEntry = entry }
+                                )
+                            }
                         }
                     }
                 }

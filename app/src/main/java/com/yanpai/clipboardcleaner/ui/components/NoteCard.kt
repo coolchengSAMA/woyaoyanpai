@@ -17,6 +17,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.animation.animateContentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -24,13 +25,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.yanpai.clipboardcleaner.data.NoteEntry
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
+import java.time.Instant
+import java.time.LocalDateTime
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 
-// 复用对象，避免每次 recompose 都创建
-private val timeFormatter = SimpleDateFormat("HH:mm", Locale.getDefault())
-private val dateFormatter = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
+// 线程安全的日期格式化器
+private val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
+private val dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
 
 @Composable
 fun NoteCard(
@@ -45,8 +47,9 @@ fun NoteCard(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 4.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+            .padding(horizontal = 16.dp, vertical = 4.dp)
+            .animateContentSize(),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         colors = CardDefaults.cardColors(
             containerColor = if (isRead)
                 MaterialTheme.colorScheme.surface.copy(alpha = 0.6f)
@@ -111,11 +114,12 @@ fun NoteCard(
 
 private fun formatTime(timestamp: Long): String {
     val diff = System.currentTimeMillis() - timestamp
+    val dt = LocalDateTime.ofInstant(Instant.ofEpochMilli(timestamp), ZoneId.systemDefault())
     return when {
         diff < 60_000L -> "刚刚"
         diff < 3_600_000L -> "${diff / 60_000} 分钟前"
         diff < 86_400_000L -> "${diff / 3_600_000} 小时前"
-        diff < 172_800_000L -> "昨天 ${timeFormatter.format(Date(timestamp))}"
-        else -> dateFormatter.format(Date(timestamp))
+        diff < 172_800_000L -> "昨天 ${timeFormatter.format(dt)}"
+        else -> dateFormatter.format(dt)
     }
 }

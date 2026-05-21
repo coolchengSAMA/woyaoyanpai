@@ -7,10 +7,13 @@ import android.content.Context
 /**
  * 系统剪贴板读写封装。
  */
-class ClipboardMonitor(private val context: Context) {
+class ClipboardMonitor(context: Context) {
 
     private val manager: ClipboardManager =
         context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+
+    // SAM 接口实例，确保 add/remove 引用的是同一个对象
+    private var primaryClipListener: ClipboardManager.OnPrimaryClipChangedListener? = null
 
     /**
      * 读取剪贴板文本内容。非文本内容返回 null。
@@ -34,13 +37,16 @@ class ClipboardMonitor(private val context: Context) {
      * 注册剪贴板变化监听器。
      */
     fun setOnChangeListener(listener: () -> Unit) {
-        manager.addPrimaryClipChangedListener(listener)
+        removeChangeListener() // 防止重复注册
+        primaryClipListener = ClipboardManager.OnPrimaryClipChangedListener { listener() }
+        manager.addPrimaryClipChangedListener(primaryClipListener!!)
     }
 
     /**
      * 移除剪贴板变化监听器。
      */
-    fun removeChangeListener(listener: () -> Unit) {
-        manager.removePrimaryClipChangedListener(listener)
+    fun removeChangeListener() {
+        primaryClipListener?.let { manager.removePrimaryClipChangedListener(it) }
+        primaryClipListener = null
     }
 }

@@ -10,6 +10,7 @@ import com.yanpai.clipboardcleaner.data.AppDatabase
 import com.yanpai.clipboardcleaner.data.NoteEntry
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 
 data class NotebookUiState(
@@ -37,10 +38,11 @@ class NotebookViewModel(application: Application) : AndroidViewModel(application
 
     private fun loadCounts() {
         viewModelScope.launch {
-            noteDao.getCountByCategory("comic").collect { c -> _uiState.value = _uiState.value.copy(comicCount = c) }
-        }
-        viewModelScope.launch {
-            noteDao.getCountByCategory("video").collect { c -> _uiState.value = _uiState.value.copy(videoCount = c) }
+            noteDao.getCountByCategory("comic")
+                .combine(noteDao.getCountByCategory("video")) { comic, video ->
+                    _uiState.value = _uiState.value.copy(comicCount = comic, videoCount = video)
+                }
+                .collect {}
         }
     }
 
@@ -58,19 +60,19 @@ class NotebookViewModel(application: Application) : AndroidViewModel(application
 
     fun toggleRead(entry: NoteEntry) {
         viewModelScope.launch {
-            noteDao.toggleRead(entry.id)
+            try { noteDao.toggleRead(entry.id) } catch (_: Exception) {}
         }
     }
 
     fun deleteEntry(entry: NoteEntry) {
         viewModelScope.launch {
-            noteDao.delete(entry)
+            try { noteDao.delete(entry) } catch (_: Exception) {}
         }
     }
 
     fun clearCategory(category: String) {
         viewModelScope.launch {
-            noteDao.deleteByCategory(category)
+            try { noteDao.deleteByCategory(category) } catch (_: Exception) {}
         }
     }
 
