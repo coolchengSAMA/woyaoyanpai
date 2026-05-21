@@ -36,5 +36,11 @@ fun EmptyState() {
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
         )
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(
+            text = "验牌后会自动保存到这里",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
+        )
     }
 }

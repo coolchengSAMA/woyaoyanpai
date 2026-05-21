@@ -42,8 +42,6 @@ object CleanerPatterns {
     fun extractComicDigits(text: String): String? {
         val digitsOnly = text.replace(Regex("\\D"), "")
         if (digitsOnly.length !in 6..7) return null
-        // 排除 11 位手机号
-        if (digitsOnly.length == 11 && digitsOnly.startsWith("1") && digitsOnly[1] in '3'..'9') return null
         return digitsOnly
     }
 

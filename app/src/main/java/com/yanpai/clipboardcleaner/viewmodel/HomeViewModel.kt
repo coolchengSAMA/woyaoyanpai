@@ -10,10 +10,12 @@ import com.yanpai.clipboardcleaner.data.AppDatabase
 import com.yanpai.clipboardcleaner.data.NoteEntry
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 
 data class HomeUiState(
     val clipboardText: String? = null,
+    val originalText: String? = null,
     val detectResult: DetectResult? = null,
     val isRead: Boolean = false,
     val isSaved: Boolean = false,
@@ -62,7 +64,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         _uiState.value = _uiState.value.copy(clipboardText = rawText)
 
         if (rawText.isNullOrBlank()) {
-            _uiState.value = _uiState.value.copy(error = "剪贴板为空")
+            _uiState.value = _uiState.value.copy(noMatch = false, detectResult = null)
             return
         }
 
@@ -76,6 +78,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             lastCleanedText = result.cleaned
             _uiState.value = _uiState.value.copy(
                 detectResult = result,
+                originalText = rawText,
                 isRead = false,
                 isSaved = false,
                 noMatch = false,
@@ -115,38 +118,41 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     private fun saveEntry(result: DetectResult, rawText: String) {
         val isReadNow = _uiState.value.isRead
         viewModelScope.launch {
-            val existing = noteDao.findDuplicate(result.cleaned, result.category)
-            if (existing != null) {
-                // 重复：更新日期，保留原有 is_read
-                noteDao.updateDuplicate(
-                    id = existing.id,
-                    updatedAt = System.currentTimeMillis(),
-                    original = rawText
-                )
-            } else {
-                // 新记录
-                noteDao.insert(
-                    NoteEntry(
-                        originalText = rawText,
-                        cleanedText = result.cleaned,
-                        category = result.category,
-                        createdAt = System.currentTimeMillis(),
+            try {
+                val existing = noteDao.findDuplicate(result.cleaned, result.category)
+                if (existing != null) {
+                    noteDao.updateDuplicate(
+                        id = existing.id,
                         updatedAt = System.currentTimeMillis(),
-                        isRead = isReadNow
+                        original = rawText
                     )
-                )
+                } else {
+                    noteDao.insert(
+                        NoteEntry(
+                            originalText = rawText,
+                            cleanedText = result.cleaned,
+                            category = result.category,
+                            createdAt = System.currentTimeMillis(),
+                            updatedAt = System.currentTimeMillis(),
+                            isRead = isReadNow
+                        )
+                    )
+                }
+                _uiState.value = _uiState.value.copy(isSaved = true)
+                loadCounts()
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(error = "保存失败，请稍后再试")
             }
-            _uiState.value = _uiState.value.copy(isSaved = true)
-            loadCounts()
         }
     }
 
     private fun loadCounts() {
         viewModelScope.launch {
-            noteDao.getCountByCategory("comic").collect { c -> _uiState.value = _uiState.value.copy(comicCount = c) }
-        }
-        viewModelScope.launch {
-            noteDao.getCountByCategory("video").collect { c -> _uiState.value = _uiState.value.copy(videoCount = c) }
+            noteDao.getCountByCategory("comic")
+                .combine(noteDao.getCountByCategory("video")) { comic, video ->
+                    _uiState.value = _uiState.value.copy(comicCount = comic, videoCount = video)
+                }
+                .collect {}
         }
     }
 
