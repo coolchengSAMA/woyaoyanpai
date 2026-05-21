@@ -7,7 +7,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/platform-Android-blue" alt="Platform">
   <img src="https://img.shields.io/badge/minSdk-29-green" alt="Min SDK">
-  <img src="https://img.shields.io/badge/version-1.0.1-orange" alt="Version">
+  <img src="https://img.shields.io/badge/version-1.0.2-orange" alt="Version">
 </p>
 
 ## 功能
@@ -15,10 +15,12 @@
 - 自动识别剪贴板中的混淆内容，删除汉字提取纯文本
 - 漫画识别：6-7 位连续数字 / JM + 5-6 位数字
 - 视频识别：番号格式（3-5 字母 + 3-5 数字），统一输出为 `字母-数字`
-- 分类笔记本：漫画 / 视频，带保存日期和已阅标记
-- 重复内容自动更新日期，保留已阅状态
-- 隐私保护：只保存匹配规则的内容，其余一律忽略
-- 深色模式：跟随系统 + 手动切换
+- 分类笔记本：漫画 / 视频，已阅标记、置顶、搜索、批量操作
+- 回收站：软删除 + 7 天自动清理，支持恢复
+- 数据导出/导入：JSON 备份，SAF 文件选择器
+- 自定义主题：6 色可配置，多套预设，深色/浅色分别设置
+- 自定义背景图片：缩放/裁切/拉伸/自由四种模式，自由模式支持手势调整
+- 隐私保护：只保存匹配规则的内容，云端备份已关闭
 
 ## 使用方法
 
