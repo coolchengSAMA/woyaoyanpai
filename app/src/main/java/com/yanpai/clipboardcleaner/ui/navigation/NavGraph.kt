@@ -11,12 +11,14 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.yanpai.clipboardcleaner.ui.screens.HomeScreen
 import com.yanpai.clipboardcleaner.ui.screens.NotebookScreen
+import com.yanpai.clipboardcleaner.ui.screens.SettingsScreen
 import com.yanpai.clipboardcleaner.viewmodel.HomeViewModel
 import com.yanpai.clipboardcleaner.viewmodel.NotebookViewModel
 
 object Routes {
     const val HOME = "home"
     const val NOTEBOOK = "notebook"
+    const val SETTINGS = "settings"
 }
 
 @Composable
@@ -40,9 +42,8 @@ fun AppNavGraph(
                 viewModel = homeViewModel,
                 isDarkTheme = isDarkTheme,
                 onToggleDarkTheme = onToggleDarkTheme,
-                onNavigateToNotebook = {
-                    navController.navigate(Routes.NOTEBOOK)
-                }
+                onNavigateToNotebook = { navController.navigate(Routes.NOTEBOOK) },
+                onNavigateToSettings = { navController.navigate(Routes.SETTINGS) }
             )
         }
         composable(
@@ -58,6 +59,15 @@ fun AppNavGraph(
                 viewModel = notebookViewModel,
                 onBack = { navController.popBackStack() }
             )
+        }
+        composable(
+            route = Routes.SETTINGS,
+            enterTransition = { EnterTransition.None },
+            exitTransition = { ExitTransition.None },
+            popEnterTransition = { EnterTransition.None },
+            popExitTransition = { ExitTransition.None }
+        ) {
+            SettingsScreen(onBack = { navController.popBackStack() })
         }
     }
 }

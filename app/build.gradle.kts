@@ -1,7 +1,13 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("com.google.devtools.ksp")
+}
+
+val keystoreProps = Properties().apply {
+    rootProject.file("local.properties").takeIf { it.exists() }?.inputStream()?.use { load(it) }
 }
 
 android {
@@ -24,9 +30,9 @@ android {
     signingConfigs {
         create("release") {
             storeFile = file("../yanpai.jks")
-            storePassword = "XXXXXXXX"
-            keyAlias = "yanpai"
-            keyPassword = "XXXXXXXX"
+            storePassword = keystoreProps.getProperty("KEYSTORE_PASSWORD", "")
+            keyAlias = keystoreProps.getProperty("KEY_ALIAS", "yanpai")
+            keyPassword = keystoreProps.getProperty("KEY_PASSWORD", "")
         }
     }
 

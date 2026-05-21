@@ -40,6 +40,14 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     init {
         loadCounts()
         readClipboard()
+        autoCleanTrash()
+    }
+
+    private fun autoCleanTrash() {
+        viewModelScope.launch {
+            val sevenDaysAgo = System.currentTimeMillis() - 7 * 24 * 60 * 60 * 1000L
+            noteDao.autoCleanTrash(sevenDaysAgo)
+        }
     }
 
     /**
@@ -121,22 +129,34 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             try {
                 val existing = noteDao.findDuplicate(result.cleaned, result.category)
                 if (existing != null) {
+                    // 活跃记录：更新日期
                     noteDao.updateDuplicate(
                         id = existing.id,
                         updatedAt = System.currentTimeMillis(),
                         original = rawText
                     )
                 } else {
-                    noteDao.insert(
-                        NoteEntry(
-                            originalText = rawText,
-                            cleanedText = result.cleaned,
-                            category = result.category,
-                            createdAt = System.currentTimeMillis(),
+                    // 检查回收站中是否有相同内容，有则自动恢复
+                    val trashed = noteDao.findDeletedDuplicate(result.cleaned, result.category)
+                    if (trashed != null) {
+                        noteDao.restore(trashed.id)
+                        noteDao.updateDuplicate(
+                            id = trashed.id,
                             updatedAt = System.currentTimeMillis(),
-                            isRead = isReadNow
+                            original = rawText
                         )
-                    )
+                    } else {
+                        noteDao.insert(
+                            NoteEntry(
+                                originalText = rawText,
+                                cleanedText = result.cleaned,
+                                category = result.category,
+                                createdAt = System.currentTimeMillis(),
+                                updatedAt = System.currentTimeMillis(),
+                                isRead = isReadNow
+                            )
+                        )
+                    }
                 }
                 _uiState.value = _uiState.value.copy(isSaved = true)
                 loadCounts()

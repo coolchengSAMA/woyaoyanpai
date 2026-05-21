@@ -82,7 +82,7 @@ app/src/main/java/com/yanpai/clipboardcleaner/
 
 Debug：Android Studio → Run（绿色三角）
 Release：Build → Generate Signed Bundle / APK → APK
-密钥：`yanpai.jks`（项目根目录），alias `yanpai`，密码 `XXXXXXXX`
+密钥：`yanpai.jks`（项目根目录），alias `yanpai`，密码见 `local.properties`
 
 Release APK 启用 R8 混淆 + 资源裁剪，体积约 5-8MB。
 

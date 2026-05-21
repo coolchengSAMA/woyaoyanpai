@@ -1,5 +1,8 @@
 package com.yanpai.clipboardcleaner.ui.components
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -8,8 +11,11 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.DeleteOutline
+import androidx.compose.material.icons.outlined.PushPin
+import androidx.compose.material.icons.outlined.RestoreFromTrash
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
@@ -17,8 +23,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.animation.animateContentSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -30,83 +36,104 @@ import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
-// 线程安全的日期格式化器
 private val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
 private val dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun NoteCard(
     entry: NoteEntry,
+    isSelectionMode: Boolean,
+    isSelected: Boolean,
     onToggleRead: () -> Unit,
     onCopy: () -> Unit,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
+    onPin: () -> Unit,
+    onLongPress: () -> Unit,
+    onToggleSelect: () -> Unit,
+    isTrash: Boolean = false,
+    onRestore: (() -> Unit)? = null
 ) {
-    val isRead = entry.isRead
     val displayTime = remember(entry.updatedAt) { formatTime(entry.updatedAt) }
+    val cardColor by animateColorAsState(
+        if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
+        else MaterialTheme.colorScheme.surface,
+        label = "bg"
+    )
+    val dimColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
 
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 4.dp)
-            .animateContentSize(),
+            .padding(vertical = 4.dp)
+            .combinedClickable(
+                onClick = { if (isSelectionMode) onToggleSelect() },
+                onLongClick = { if (!isSelectionMode && !isTrash) onLongPress() }
+            ),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = if (isRead)
-                MaterialTheme.colorScheme.surface.copy(alpha = 0.6f)
-            else MaterialTheme.colorScheme.surface
-        )
+        colors = CardDefaults.cardColors(containerColor = cardColor)
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
+            Modifier.fillMaxWidth().padding(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Checkbox(
-                checked = isRead,
-                onCheckedChange = { onToggleRead() }
-            )
+            // 左侧：多选勾选框 或 已阅勾选框
+            if (isSelectionMode) {
+                Checkbox(checked = isSelected, onCheckedChange = { onToggleSelect() })
+                Spacer(Modifier.width(4.dp))
+            } else if (!isTrash) {
+                Checkbox(checked = entry.isRead, onCheckedChange = { onToggleRead() })
+                Spacer(Modifier.width(4.dp))
+            }
 
-            Column(modifier = Modifier.weight(1f)) {
+            // 中间：内容
+            Column(Modifier.weight(1f)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (entry.isPinned) {
+                        Icon(Icons.Filled.PushPin, null, Modifier.height(14.dp), tint = MaterialTheme.colorScheme.primary)
+                        Spacer(Modifier.width(4.dp))
+                    }
+                    Text(
+                        entry.cleanedText,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = if (entry.isRead) dimColor else MaterialTheme.colorScheme.onSurface,
+                        maxLines = 1, overflow = TextOverflow.Ellipsis
+                    )
+                }
+                Spacer(Modifier.height(2.dp))
                 Text(
-                    text = entry.cleanedText,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = if (isRead) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f) else MaterialTheme.colorScheme.onSurface,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Spacer(modifier = Modifier.height(2.dp))
-                Text(
-                    text = "原始: ${entry.originalText}",
+                    "原始: ${entry.originalText}",
                     style = MaterialTheme.typography.bodySmall,
-                    color = (if (isRead) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f) else MaterialTheme.colorScheme.onSurface).copy(alpha = 0.7f),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                    color = (if (entry.isRead) dimColor else MaterialTheme.colorScheme.onSurface).copy(alpha = 0.7f),
+                    maxLines = 1, overflow = TextOverflow.Ellipsis
                 )
-                Spacer(modifier = Modifier.height(2.dp))
-                Text(
-                    text = displayTime,
-                    style = MaterialTheme.typography.labelMedium,
-                    color = (if (isRead) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f) else MaterialTheme.colorScheme.onSurface).copy(alpha = 0.5f)
-                )
+                Spacer(Modifier.height(2.dp))
+                Text(displayTime, style = MaterialTheme.typography.labelMedium,
+                    color = (if (entry.isRead) dimColor else MaterialTheme.colorScheme.onSurface).copy(alpha = 0.5f))
             }
 
-            Spacer(modifier = Modifier.width(8.dp))
-
-            IconButton(onClick = onCopy) {
-                Icon(
-                    imageVector = Icons.Outlined.ContentCopy,
-                    contentDescription = "复制",
-                    tint = MaterialTheme.colorScheme.primary
-                )
-            }
-
-            IconButton(onClick = onDelete) {
-                Icon(
-                    imageVector = Icons.Outlined.DeleteOutline,
-                    contentDescription = "删除",
-                    tint = MaterialTheme.colorScheme.error
-                )
+            // 右侧按钮
+            if (!isSelectionMode) {
+                if (isTrash && onRestore != null) {
+                    IconButton(onClick = onRestore) {
+                        Icon(Icons.Outlined.RestoreFromTrash, "恢复", tint = MaterialTheme.colorScheme.primary)
+                    }
+                    IconButton(onClick = onDelete) {
+                        Icon(Icons.Outlined.DeleteOutline, "永久删除", tint = MaterialTheme.colorScheme.error)
+                    }
+                } else {
+                    IconButton(onClick = onPin) {
+                        Icon(if (entry.isPinned) Icons.Filled.PushPin else Icons.Outlined.PushPin, "置顶",
+                            tint = if (entry.isPinned) MaterialTheme.colorScheme.primary
+                            else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f))
+                    }
+                    IconButton(onClick = onCopy) {
+                        Icon(Icons.Outlined.ContentCopy, "复制", tint = MaterialTheme.colorScheme.primary)
+                    }
+                    IconButton(onClick = onDelete) {
+                        Icon(Icons.Outlined.DeleteOutline, "删除", tint = MaterialTheme.colorScheme.error)
+                    }
+                }
             }
         }
     }

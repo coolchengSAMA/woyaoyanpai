@@ -16,6 +16,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.DarkMode
 import androidx.compose.material.icons.outlined.LightMode
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -52,7 +53,8 @@ fun HomeScreen(
     viewModel: HomeViewModel,
     isDarkTheme: Boolean = false,
     onToggleDarkTheme: () -> Unit = {},
-    onNavigateToNotebook: () -> Unit
+    onNavigateToNotebook: () -> Unit,
+    onNavigateToSettings: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -80,6 +82,9 @@ fun HomeScreen(
             TopAppBar(
                 title = { Text("我要验牌") },
                 actions = {
+                    IconButton(onClick = onNavigateToSettings) {
+                        Icon(Icons.Outlined.Settings, "设置", tint = MaterialTheme.colorScheme.onPrimary)
+                    }
                     IconButton(onClick = onToggleDarkTheme) {
                         Icon(
                             imageVector = if (isDarkTheme) Icons.Outlined.LightMode else Icons.Outlined.DarkMode,

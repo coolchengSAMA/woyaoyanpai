@@ -11,7 +11,6 @@ class YanPaiApp : Application() {
 
     override fun onCreate() {
         super.onCreate()
-        // 预初始化数据库
         database
     }
 }
