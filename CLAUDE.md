@@ -55,9 +55,9 @@ app/src/main/java/com/yanpai/clipboardcleaner/
 ## 核心业务规则
 
 ### 检测优先级（ContentDetector）
-1. 规则 1A：去汉字 → 拼接所有数字 → 长度 6-7 → 漫画
-2. 规则 1B：去汉字 → 匹配 `JM\d{5,6}` → 漫画
-3. 规则 2：去汉字 → 规范化分隔符 → 匹配 `字母{3,5}-?\d{3,5}` → 统一输出 `字母-数字` → 视频
+1. 规则 1A：去汉字 → 删所有非数字字符 → 剩余数字长度 6-7 → 漫画
+2. 规则 1B：去汉字 → 匹配 `[Jj][Mm]\d{5,6}` → 漫画
+3. 规则 2：去汉字 → 去空格 → 分隔符统一为 `-` → 匹配 `字母{3,5}-?\d{3,5}` → 统一输出 `字母-数字` → 视频
 4. 不匹配 → 忽略（不保存，保护隐私）
 
 ### 笔记本去重
@@ -66,16 +66,17 @@ app/src/main/java/com/yanpai/clipboardcleaner/
 - 新内容 → 新建记录，`is_read = false`
 
 ### 剪贴板监听
-- `onResume`：注册监听 + 双重检测（即时 + 500ms 延迟）
+- `onResume`：注册监听 + 双重检测（即时 + 500ms Handler 延迟）
 - `onPause`：移除监听
+- `ClipboardMonitor` 内部存储 `OnPrimaryClipChangedListener` 实例，`removeChangeListener()` 无参数，防止 SAM 转换导致移除失败
 - 死循环防护：`lastCleanedText` 缓存上次清理结果，匹配则跳过
 - Android 10+ 限制：后台无法读剪贴板，仅前台工作
 
 ### 深色模式
-- 默认跟随系统（`Configuration.UI_MODE_NIGHT_MASK`）
-- 手动切换覆盖系统
+- 默认跟随系统（`Configuration.UI_MODE_NIGHT_MASK`），启动时读取 SharedPreferences 检查用户之前是否手动切换过
+- 手动切换写入 `SharedPreferences`（key: `dark`），重启 App 保持
 - 深色主题：暗黄 `#B8860B` + 纯黑 `#000000`
-- 状态由 MainActivity 持有，通过 NavGraph → HomeScreen 传递
+- 状态由 MainActivity 持有，通过 NavGraph → HomeScreen → NotebookScreen 传递
 
 ## 构建
 
@@ -85,13 +86,28 @@ Release：Build → Generate Signed Bundle / APK → APK
 
 Release APK 启用 R8 混淆 + 资源裁剪，体积约 5-8MB。
 
+## 自动化测试
+
+项目包含 ADB 驱动脚本，用于在真机上自动化操作 App：
+
+```bash
+bash .claude/skills/run-woyaoyanpai/driver.sh launch     # 启动 App
+bash .claude/skills/run-woyaoyanpai/driver.sh detect "文本" # 设剪贴板 → 检测 → 截图
+bash .claude/skills/run-woyaoyanpai/driver.sh test        # 完整测试流程
+```
+
+截图保存在 `screenshots/` 目录。需要 Android 设备已连接且开启 USB 调试。
+
+
 ## 编码约定
 
 - 所有 `_uiState.value.copy()` 用命名参数防止 `it` 冲突
 - ViewModel 通过 `viewModel(viewModelStoreOwner = activity)` 在 Activity 级别共享
 - 页面导航无过渡动画（`EnterTransition.None`）
-- 笔记时间格式化：`formatTime()` 使用全局单例 `SimpleDateFormat`，NoteCard 中 `remember(entry.updatedAt)` 缓存
+- 笔记时间格式化：`formatTime()` 使用线程安全的 `java.time.format.DateTimeFormatter` 全局单例，NoteCard 中 `remember(entry.updatedAt)` 缓存
 - LazyColumn 使用 `key = { it.id }` 稳定键
+- 多个 Room Flow 需同时更新时用 `combine()` 合并，避免竞态
+- `ClipboardMonitor` 的 `setOnChangeListener` / `removeChangeListener` 不加参数，内部管理 SAM 实例
 
 ## 添加新检测规则
 
