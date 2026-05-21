@@ -3,6 +3,7 @@ package com.yanpai.clipboardcleaner.ui.screens
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -66,6 +67,8 @@ import com.yanpai.clipboardcleaner.ui.components.EmptyState
 import com.yanpai.clipboardcleaner.ui.components.NoteCard
 import com.yanpai.clipboardcleaner.viewmodel.NotebookViewModel
 import kotlinx.coroutines.launch
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -78,6 +81,7 @@ fun NotebookScreen(viewModel: NotebookViewModel, onBack: () -> Unit) {
     var showClearTrashDialog by remember { mutableStateOf(false) }
     var menuTarget by remember { mutableStateOf<NoteEntry?>(null) }
     var showOverflowMenu by remember { mutableStateOf(false) }
+    var pendingDelete by remember { mutableStateOf<NoteEntry?>(null) }
 
     val exportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
         uri?.let { viewModel.exportToJson(it) }
@@ -160,6 +164,29 @@ fun NotebookScreen(viewModel: NotebookViewModel, onBack: () -> Unit) {
         )
     }
 
+    // 单条删除二次确认
+    if (pendingDelete != null) {
+        val entry = pendingDelete!!
+        val isPermanent = uiState.isTrashMode
+        AlertDialog(
+            onDismissRequest = { pendingDelete = null },
+            title = { Text(if (isPermanent) "永久删除" else "删除确认") },
+            text = {
+                Text(
+                    if (isPermanent) "确定要永久删除「${entry.cleanedText}」吗？此操作不可恢复。"
+                    else "确定要删除「${entry.cleanedText}」吗？\n\n删除后可在回收站恢复。"
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    if (isPermanent) viewModel.permanentDelete(entry) else viewModel.softDelete(entry)
+                    pendingDelete = null
+                }) { Text("删除", color = MaterialTheme.colorScheme.error) }
+            },
+            dismissButton = { TextButton(onClick = { pendingDelete = null }) { Text("取消") } }
+        )
+    }
+
     Scaffold(
         topBar = {
             if (uiState.isSearching) {
@@ -217,7 +244,8 @@ fun NotebookScreen(viewModel: NotebookViewModel, onBack: () -> Unit) {
                                         text = { Text("导出备份") },
                                         onClick = {
                                             showOverflowMenu = false
-                                            exportLauncher.launch("woyaoyanpai_backup.json")
+                                            val ts = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"))
+                                            exportLauncher.launch("woyaoyanpai_backup_$ts.json")
                                         }
                                     )
                                     DropdownMenuItem(
@@ -247,10 +275,10 @@ fun NotebookScreen(viewModel: NotebookViewModel, onBack: () -> Unit) {
         },
         bottomBar = {
             if (uiState.isSelectionMode) {
-                BottomAppBar(containerColor = MaterialTheme.colorScheme.primaryContainer) {
+                BottomAppBar(containerColor = MaterialTheme.colorScheme.tertiary) {
                     TextButton(onClick = { viewModel.exitSelectionMode() }) { Text("取消") }
                     Spacer(Modifier.weight(1f))
-                    Text("已选 ${uiState.selectedIds.size} 条", color = MaterialTheme.colorScheme.onPrimaryContainer)
+                    Text("已选 ${uiState.selectedIds.size} 条", color = MaterialTheme.colorScheme.onTertiary)
                     Spacer(Modifier.weight(1f))
                     IconButton(onClick = { viewModel.batchMarkRead() }) { Icon(Icons.Filled.DoneAll, "标记已阅") }
                     IconButton(onClick = { showBatchDeleteDialog = true }) { Icon(Icons.Filled.Delete, "删除", tint = MaterialTheme.colorScheme.error) }
@@ -260,12 +288,16 @@ fun NotebookScreen(viewModel: NotebookViewModel, onBack: () -> Unit) {
     ) { padding ->
         Column(Modifier.padding(padding)) {
             // 统计栏
-            Text(
-                text = "共验牌 ${uiState.totalCount} 条",
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)
-            )
+            Box(
+                Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.secondary)
+                    .padding(horizontal = 16.dp, vertical = 6.dp)
+            ) {
+                Text(
+                    text = "共验牌 ${uiState.totalCount} 条",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSecondary
+                )
+            }
 
             if (uiState.isTrashMode) {
                 val trashPagerState = rememberPagerState(pageCount = { 2 })
@@ -274,7 +306,7 @@ fun NotebookScreen(viewModel: NotebookViewModel, onBack: () -> Unit) {
                 }
                 TabRow(
                     selectedTabIndex = trashPagerState.currentPage,
-                    containerColor = MaterialTheme.colorScheme.surface,
+                    containerColor = MaterialTheme.colorScheme.secondary,
                     contentColor = MaterialTheme.colorScheme.primary
                 ) {
                     Tab(selected = trashPagerState.currentPage == 0,
@@ -300,7 +332,7 @@ fun NotebookScreen(viewModel: NotebookViewModel, onBack: () -> Unit) {
                                         isSelectionMode = uiState.isSelectionMode,
                                         isSelected = uiState.selectedIds.contains(entry.id),
                                         onToggleRead = {}, onCopy = {}, onPin = {},
-                                        onDelete = { viewModel.permanentDelete(entry) },
+                                        onDelete = { pendingDelete = entry },
                                         onLongPress = { viewModel.enterSelectionMode(entry.id) },
                                         onToggleSelect = { viewModel.toggleSelection(entry.id) },
                                         isTrash = true,
@@ -315,7 +347,7 @@ fun NotebookScreen(viewModel: NotebookViewModel, onBack: () -> Unit) {
                 // 正常标签页
                 TabRow(
                     selectedTabIndex = pagerState.currentPage,
-                    containerColor = MaterialTheme.colorScheme.surface,
+                    containerColor = MaterialTheme.colorScheme.secondary,
                     contentColor = MaterialTheme.colorScheme.primary
                 ) {
                     Tab(selected = pagerState.currentPage == 0, onClick = { scope.launch { pagerState.animateScrollToPage(0) } },
@@ -344,7 +376,7 @@ fun NotebookScreen(viewModel: NotebookViewModel, onBack: () -> Unit) {
                                             viewModel.copyToClipboard(entry.cleanedText)
                                             scope.launch { snackbarHostState.showSnackbar("已复制到剪贴板") }
                                         },
-                                        onDelete = { viewModel.softDelete(entry) },
+                                        onDelete = { pendingDelete = entry },
                                         onPin = { viewModel.togglePin(entry) },
                                         onLongPress = { viewModel.enterSelectionMode(entry.id) },
                                         onToggleSelect = { viewModel.toggleSelection(entry.id) }

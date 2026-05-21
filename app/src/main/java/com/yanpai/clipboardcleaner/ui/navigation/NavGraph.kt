@@ -14,6 +14,7 @@ import com.yanpai.clipboardcleaner.ui.screens.NotebookScreen
 import com.yanpai.clipboardcleaner.ui.screens.SettingsScreen
 import com.yanpai.clipboardcleaner.viewmodel.HomeViewModel
 import com.yanpai.clipboardcleaner.viewmodel.NotebookViewModel
+import com.yanpai.clipboardcleaner.viewmodel.ThemeViewModel
 
 object Routes {
     const val HOME = "home"
@@ -24,7 +25,8 @@ object Routes {
 @Composable
 fun AppNavGraph(
     isDarkTheme: Boolean = false,
-    onToggleDarkTheme: () -> Unit = {}
+    onToggleDarkTheme: () -> Unit = {},
+    themeViewModel: ThemeViewModel? = null
 ) {
     val navController = rememberNavController()
 
@@ -67,7 +69,10 @@ fun AppNavGraph(
             popEnterTransition = { EnterTransition.None },
             popExitTransition = { ExitTransition.None }
         ) {
-            SettingsScreen(onBack = { navController.popBackStack() })
+            SettingsScreen(
+                onBack = { navController.popBackStack() },
+                themeViewModel = themeViewModel
+            )
         }
     }
 }

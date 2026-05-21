@@ -19,6 +19,7 @@ import androidx.compose.material.icons.outlined.RestoreFromTrash
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -56,7 +57,7 @@ fun NoteCard(
 ) {
     val displayTime = remember(entry.updatedAt) { formatTime(entry.updatedAt) }
     val cardColor by animateColorAsState(
-        if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
+        if (isSelected) MaterialTheme.colorScheme.tertiary.copy(alpha = 0.3f)
         else MaterialTheme.colorScheme.surface,
         label = "bg"
     )
@@ -78,11 +79,12 @@ fun NoteCard(
             verticalAlignment = Alignment.CenterVertically
         ) {
             // 左侧：多选勾选框 或 已阅勾选框
+            val checkColors = CheckboxDefaults.colors(checkedColor = MaterialTheme.colorScheme.tertiary)
             if (isSelectionMode) {
-                Checkbox(checked = isSelected, onCheckedChange = { onToggleSelect() })
+                Checkbox(checked = isSelected, onCheckedChange = { onToggleSelect() }, colors = checkColors)
                 Spacer(Modifier.width(4.dp))
             } else if (!isTrash) {
-                Checkbox(checked = entry.isRead, onCheckedChange = { onToggleRead() })
+                Checkbox(checked = entry.isRead, onCheckedChange = { onToggleRead() }, colors = checkColors)
                 Spacer(Modifier.width(4.dp))
             }
 
@@ -104,7 +106,7 @@ fun NoteCard(
                 Text(
                     "原始: ${entry.originalText}",
                     style = MaterialTheme.typography.bodySmall,
-                    color = (if (entry.isRead) dimColor else MaterialTheme.colorScheme.onSurface).copy(alpha = 0.7f),
+                    color = (if (entry.isRead) dimColor else MaterialTheme.colorScheme.onSurface).copy(alpha = 0.6f),
                     maxLines = 1, overflow = TextOverflow.Ellipsis
                 )
                 Spacer(Modifier.height(2.dp))
@@ -125,7 +127,7 @@ fun NoteCard(
                     IconButton(onClick = onPin) {
                         Icon(if (entry.isPinned) Icons.Filled.PushPin else Icons.Outlined.PushPin, "置顶",
                             tint = if (entry.isPinned) MaterialTheme.colorScheme.primary
-                            else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f))
+                            else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
                     }
                     IconButton(onClick = onCopy) {
                         Icon(Icons.Outlined.ContentCopy, "复制", tint = MaterialTheme.colorScheme.primary)

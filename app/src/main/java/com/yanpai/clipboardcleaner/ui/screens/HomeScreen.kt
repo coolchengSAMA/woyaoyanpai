@@ -82,15 +82,15 @@ fun HomeScreen(
             TopAppBar(
                 title = { Text("我要验牌") },
                 actions = {
-                    IconButton(onClick = onNavigateToSettings) {
-                        Icon(Icons.Outlined.Settings, "设置", tint = MaterialTheme.colorScheme.onPrimary)
-                    }
                     IconButton(onClick = onToggleDarkTheme) {
                         Icon(
                             imageVector = if (isDarkTheme) Icons.Outlined.LightMode else Icons.Outlined.DarkMode,
                             contentDescription = if (isDarkTheme) "切换亮色模式" else "切换深色模式",
                             tint = MaterialTheme.colorScheme.onPrimary
                         )
+                    }
+                    IconButton(onClick = onNavigateToSettings) {
+                        Icon(Icons.Outlined.Settings, "设置", tint = MaterialTheme.colorScheme.onPrimary)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -178,7 +178,7 @@ fun HomeScreen(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = gutter),
                 shape = MaterialTheme.shapes.medium,
                 elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
             ) {
                 Row(
                     Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp),
@@ -186,13 +186,13 @@ fun HomeScreen(
                 ) {
                     Column(Modifier.weight(1f)) {
                         Text("打开笔记本", style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.onSecondaryContainer)
+                            color = MaterialTheme.colorScheme.onSurface)
                         Text("漫画 ${uiState.comicCount} · 视频 ${uiState.videoCount}",
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f))
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
                     }
                     Text("→", style = MaterialTheme.typography.titleLarge,
-                        color = MaterialTheme.colorScheme.onSecondaryContainer)
+                        color = MaterialTheme.colorScheme.onSurface)
                 }
             }
 
@@ -201,11 +201,11 @@ fun HomeScreen(
             // ── 使用说明（仅新用户参考，可收起） ──
             Card(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = gutter),
-                shape = MaterialTheme.shapes.small,
+                shape = MaterialTheme.shapes.medium,
                 elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
             ) {
-                Column(Modifier.padding(12.dp)) {
+                Column(Modifier.padding(16.dp)) {
                     Text("使用说明", style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
                     Spacer(Modifier.height(4.dp))

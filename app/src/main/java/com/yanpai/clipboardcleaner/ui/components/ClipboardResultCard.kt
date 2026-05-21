@@ -20,8 +20,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.yanpai.clipboardcleaner.clipboard.DetectResult
-import com.yanpai.clipboardcleaner.ui.theme.ComicColor
-import com.yanpai.clipboardcleaner.ui.theme.VideoColor
 
 @Composable
 fun ClipboardResultCard(
@@ -103,7 +101,7 @@ fun ClipboardResultCard(
 
 @Composable
 private fun colorForCategory(category: String): Color = when (category) {
-    "comic" -> ComicColor
-    "video" -> VideoColor
+    "comic" -> MaterialTheme.colorScheme.primary
+    "video" -> MaterialTheme.colorScheme.tertiary
     else -> MaterialTheme.colorScheme.primary
 }

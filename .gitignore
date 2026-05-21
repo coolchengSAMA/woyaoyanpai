@@ -12,4 +12,6 @@ local.properties
 /app/release
 **/wrapper/dists/
 *.jks
+*.apk
+*.aab
 screenshots/

@@ -29,13 +29,15 @@ fun EmptyState(title: String = "还没有保存记录", subtitle: String = "验�
             imageVector = if (trash) Icons.Outlined.DeleteOutline else Icons.Outlined.Inbox,
             contentDescription = null,
             modifier = Modifier.size(64.dp),
-            tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
+            tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
         )
         Spacer(modifier = Modifier.height(16.dp))
         Text(title, style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+        )
         Spacer(modifier = Modifier.height(4.dp))
         Text(subtitle, style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f))
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+        )
     }
 }
