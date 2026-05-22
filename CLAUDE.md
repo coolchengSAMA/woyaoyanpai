@@ -42,7 +42,8 @@ app/src/main/java/com/yanpai/clipboardcleaner/
 │   ├── screens/
 │   │   ├── HomeScreen.kt        # 主页：剪贴板显示 + 检测按钮 + 结果卡片
 │   │   ├── NotebookScreen.kt    # 笔记本：TabRow + HorizontalPager + 回收站 + 批量
-│   │   ├── SettingsScreen.kt    # 设置：数据管理 + 外观与主题入口
+│   │   ├── SettingsScreen.kt    # 设置：数据管理入口 + 外观与主题入口
+│   │   ├── DataManagementScreen.kt # 数据管理：笔记本备份 + 缓存清理
 │   │   └── ThemeSettingsScreen.kt # 主题列表 + 编辑器 + 颜色选择器 + 背景图片 + 自由模式预览
 │   ├── components/
 │   │   ├── NoteCard.kt          # 笔记卡片（已阅勾选 + 复制 + 删除 + 置顶 + 多选）
@@ -86,6 +87,16 @@ app/src/main/java/com/yanpai/clipboardcleaner/
 - `ClipboardCleanerTheme` 接收 `ColorScheme` 参数（而非 `darkTheme: Boolean`）
 - 内置两套预设"默认蓝色"和"暗金色"，`isBuiltIn=true` 不可删除
 - 编辑器：亮色/深色 Tab、色板 + hex 输入、预览卡片、恢复默认、背景图片设置
+
+### 数据管理（v1.0.3）
+- 设置页新增"数据管理"入口，子页面模式与主题相同
+- 笔记本数据：导出/导入 JSON 备份（SAF 选择器，复用 NotebookViewModel）
+- 缓存管理：扫描 `filesDir/bg_*.jpg` 孤立文件，显示大小，一键清理
+
+### 已知注意事项
+- 笔记本列表**不要用 `Crossfade` 动画包裹**——Room Flow 每次 emit 新列表都会触发 250ms 渐变动画，导致标记已阅/置顶时全部卡片闪烁
+- `SnapshotFlow` / `derivedStateOf` 可以优化重组粒度
+- ThemeViewModel 与 NotebookViewModel 在 Activity 级别共享，通过 `viewModel(viewModelStoreOwner = activity)` 获取
 
 ### 背景图片
 - 4 种显示模式（ContentScale）：缩放(Fit)、裁切(Crop)、拉伸(FillBounds)、自由(None+graphicsLayer)
