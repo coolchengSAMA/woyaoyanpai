@@ -37,19 +37,22 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import com.yanpai.clipboardcleaner.viewmodel.NotebookViewModel
 import com.yanpai.clipboardcleaner.viewmodel.ThemeViewModel
 
 private sealed class SettingsPage {
     object Main : SettingsPage()
     object ThemeList : SettingsPage()
     data class ThemeEditor(val presetId: Long?) : SettingsPage()
+    object DataManagement : SettingsPage()
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
     onBack: () -> Unit,
-    themeViewModel: ThemeViewModel? = null
+    themeViewModel: ThemeViewModel? = null,
+    notebookViewModel: NotebookViewModel? = null
 ) {
     var currentPage by remember { mutableStateOf<SettingsPage>(SettingsPage.Main) }
 
@@ -73,10 +76,18 @@ fun SettingsScreen(
                 onBack = { currentPage = SettingsPage.ThemeList }
             )
         }
+        is SettingsPage.DataManagement -> {
+            DataManagementScreen(
+                onBack = { currentPage = SettingsPage.Main },
+                themeViewModel = themeViewModel,
+                notebookViewModel = notebookViewModel!!
+            )
+        }
         is SettingsPage.Main -> SettingsMainContent(
             onBack = onBack,
             themeViewModel = themeViewModel,
-            onNavigateToTheme = { currentPage = SettingsPage.ThemeList }
+            onNavigateToTheme = { currentPage = SettingsPage.ThemeList },
+            onNavigateToData = { currentPage = SettingsPage.DataManagement }
         )
     }
 }
@@ -86,12 +97,13 @@ fun SettingsScreen(
 private fun SettingsMainContent(
     onBack: () -> Unit,
     themeViewModel: ThemeViewModel?,
-    onNavigateToTheme: () -> Unit
+    onNavigateToTheme: () -> Unit,
+    onNavigateToData: () -> Unit
 ) {
     val ctx = LocalContext.current
     val versionName = try {
-        ctx.packageManager.getPackageInfo(ctx.packageName, 0).versionName ?: "1.0.2"
-    } catch (_: Exception) { "1.0.2" }
+        ctx.packageManager.getPackageInfo(ctx.packageName, 0).versionName ?: "1.0.3"
+    } catch (_: Exception) { "1.0.3" }
     val activePreset by (themeViewModel?.activePreset?.collectAsState() ?: remember { mutableStateOf(null) })
 
     Scaffold(
@@ -113,20 +125,29 @@ private fun SettingsMainContent(
     ) { padding ->
         Column(
             Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState())
+                .padding(top = 12.dp)
         ) {
             // 数据管理
             Card(
-                Modifier.fillMaxWidth().padding(16.dp),
+                onClick = onNavigateToData,
+                Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
                 shape = MaterialTheme.shapes.medium,
                 elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
             ) {
-                Column(Modifier.padding(16.dp)) {
-                    Text("数据管理", style = MaterialTheme.typography.titleMedium)
-                    Spacer(Modifier.height(8.dp))
-                    Text("所有数据仅存储在本地，卸载 App 后将永久删除。如需保留数据，请在笔记本页面右上角菜单中使用导出功能备份，重装后导入恢复。",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                Row(
+                    Modifier.fillMaxWidth().padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(Modifier.weight(1f)) {
+                        Text("数据管理", style = MaterialTheme.typography.titleMedium)
+                        Spacer(Modifier.height(2.dp))
+                        Text("笔记本数据备份与缓存清理",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
+                    }
+                    Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null,
+                        tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
                 }
             }
 
@@ -134,7 +155,7 @@ private fun SettingsMainContent(
             if (themeViewModel != null) {
                 Card(
                     onClick = onNavigateToTheme,
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
                     shape = MaterialTheme.shapes.medium,
                     elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)

@@ -13,6 +13,7 @@ import com.yanpai.clipboardcleaner.data.ThemePresetEntity
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import java.io.File
 
 class ThemeViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -159,6 +160,23 @@ class ThemeViewModel(application: Application) : AndroidViewModel(application) {
                 if (fallback != null) setActivePreset(fallback.id)
             }
         }
+    }
+
+    fun getCacheStats(): Pair<Int, Long> {
+        val dir = File(getApplication<Application>().filesDir.path)
+        val bgFiles = dir.listFiles { f -> f.name.startsWith("bg_") && f.name.endsWith(".jpg") } ?: emptyArray()
+        val usedPaths = _allPresets.value.flatMap { listOfNotNull(it.lightBackgroundImage, it.darkBackgroundImage) }.toSet()
+        val orphans = bgFiles.filter { it.absolutePath !in usedPaths }
+        return Pair(orphans.size, orphans.sumOf { it.length() })
+    }
+
+    fun clearCache(): Int {
+        val (count, _) = getCacheStats()
+        val dir = File(getApplication<Application>().filesDir.path)
+        val bgFiles = dir.listFiles { f -> f.name.startsWith("bg_") && f.name.endsWith(".jpg") } ?: emptyArray()
+        val usedPaths = _allPresets.value.flatMap { listOfNotNull(it.lightBackgroundImage, it.darkBackgroundImage) }.toSet()
+        bgFiles.filter { it.absolutePath !in usedPaths }.forEach { it.delete() }
+        return count
     }
 
     private suspend fun insertBuiltInPresets() {

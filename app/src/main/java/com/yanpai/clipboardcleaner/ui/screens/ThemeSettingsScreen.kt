@@ -133,7 +133,7 @@ fun ThemeSettingsScreen(
             }
         }
     ) { padding ->
-        LazyColumn(Modifier.fillMaxSize().padding(padding)) {
+        LazyColumn(Modifier.fillMaxSize().padding(padding), contentPadding = PaddingValues(top = 12.dp)) {
             items(presets, key = { it.id }) { preset ->
                 val isActive = preset.id == activeId
                 Card(
@@ -325,7 +325,8 @@ fun ThemeEditorScreen(
         ) { padding ->
             Column(
                 Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState())
-                    .padding(16.dp)
+                    .padding(top = 12.dp)
+                    .padding(horizontal = 16.dp)
             ) {
             // 名称
             OutlinedTextField(

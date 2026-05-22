@@ -7,7 +7,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/platform-Android-blue" alt="Platform">
   <img src="https://img.shields.io/badge/minSdk-29-green" alt="Min SDK">
-  <img src="https://img.shields.io/badge/version-1.0.2-orange" alt="Version">
+  <img src="https://img.shields.io/badge/version-1.0.3-orange" alt="Version">
 </p>
 
 ## 功能

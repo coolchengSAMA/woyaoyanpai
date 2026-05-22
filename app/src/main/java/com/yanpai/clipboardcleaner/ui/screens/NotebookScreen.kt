@@ -1,7 +1,5 @@
 package com.yanpai.clipboardcleaner.ui.screens
 
-import androidx.compose.animation.Crossfade
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -20,7 +18,6 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.filled.DoneAll
@@ -29,7 +26,6 @@ import androidx.compose.material.icons.filled.RestoreFromTrash
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.BottomAppBar
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -79,7 +75,6 @@ fun NotebookScreen(viewModel: NotebookViewModel, onBack: () -> Unit) {
     var showClearDialog by remember { mutableStateOf(false) }
     var showBatchDeleteDialog by remember { mutableStateOf(false) }
     var showClearTrashDialog by remember { mutableStateOf(false) }
-    var menuTarget by remember { mutableStateOf<NoteEntry?>(null) }
     var showOverflowMenu by remember { mutableStateOf(false) }
     var pendingDelete by remember { mutableStateOf<NoteEntry?>(null) }
 
@@ -319,14 +314,13 @@ fun NotebookScreen(viewModel: NotebookViewModel, onBack: () -> Unit) {
                 HorizontalPager(state = trashPagerState, beyondBoundsPageCount = 0, modifier = Modifier.fillMaxSize()) { page ->
                     val cat = if (page == 0) "comic" else "video"
                     val list = uiState.trashEntries.filter { it.category == cat }
-                    Crossfade(targetState = list, animationSpec = tween(250), label = "trash") { entries ->
-                        if (entries.isEmpty()) {
+                    if (list.isEmpty()) {
                             Box(Modifier.fillMaxSize()) {
                                 EmptyState(title = "回收站为空", subtitle = "删除后7天内可在此恢复", trash = true)
                             }
                         } else {
                             LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)) {
-                                items(entries, key = { it.id }) { entry ->
+                                items(list, key = { it.id }) { entry ->
                                     NoteCard(
                                         entry = entry,
                                         isSelectionMode = uiState.isSelectionMode,
@@ -341,7 +335,6 @@ fun NotebookScreen(viewModel: NotebookViewModel, onBack: () -> Unit) {
                                 }
                             }
                         }
-                    }
                 }
             } else {
                 // 正常标签页
@@ -358,15 +351,14 @@ fun NotebookScreen(viewModel: NotebookViewModel, onBack: () -> Unit) {
 
                 HorizontalPager(state = pagerState, beyondBoundsPageCount = 0, modifier = Modifier.fillMaxSize()) { page ->
                     val list = if (page == 0) uiState.comicEntries else uiState.videoEntries
-                    Crossfade(targetState = list, animationSpec = tween(250), label = "tab") { entries ->
-                        if (entries.isEmpty()) {
+                    if (list.isEmpty()) {
                             Box(Modifier.fillMaxSize()) { EmptyState() }
                         } else {
                             LazyColumn(
                                 modifier = Modifier.fillMaxSize(),
                                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
                             ) {
-                                items(entries, key = { it.id }) { entry ->
+                                items(list, key = { it.id }) { entry ->
                                     NoteCard(
                                         entry = entry,
                                         isSelectionMode = uiState.isSelectionMode,
@@ -384,7 +376,6 @@ fun NotebookScreen(viewModel: NotebookViewModel, onBack: () -> Unit) {
                                 }
                             }
                         }
-                    }
                 }
             }
         }

@@ -69,9 +69,12 @@ fun AppNavGraph(
             popEnterTransition = { EnterTransition.None },
             popExitTransition = { ExitTransition.None }
         ) {
+            val activity = LocalContext.current as ComponentActivity
+            val notebookViewModel: NotebookViewModel = viewModel(viewModelStoreOwner = activity)
             SettingsScreen(
                 onBack = { navController.popBackStack() },
-                themeViewModel = themeViewModel
+                themeViewModel = themeViewModel,
+                notebookViewModel = notebookViewModel
             )
         }
     }

@@ -1,7 +1,7 @@
 package com.yanpai.clipboardcleaner.ui.components
 
-import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material.icons.outlined.ContentCopy
@@ -56,11 +57,8 @@ fun NoteCard(
     onRestore: (() -> Unit)? = null
 ) {
     val displayTime = remember(entry.updatedAt) { formatTime(entry.updatedAt) }
-    val cardColor by animateColorAsState(
-        if (isSelected) MaterialTheme.colorScheme.tertiary.copy(alpha = 0.3f)
-        else MaterialTheme.colorScheme.surface,
-        label = "bg"
-    )
+    val cardColor = if (isSelected) MaterialTheme.colorScheme.tertiary.copy(alpha = 0.3f)
+        else MaterialTheme.colorScheme.surface
     val dimColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
 
     Card(
@@ -101,6 +99,14 @@ fun NoteCard(
                         color = if (entry.isRead) dimColor else MaterialTheme.colorScheme.onSurface,
                         maxLines = 1, overflow = TextOverflow.Ellipsis
                     )
+                    if (entry.isRead) {
+                        Spacer(Modifier.width(6.dp))
+                        Text("阅",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.tertiary,
+                            modifier = Modifier.background(MaterialTheme.colorScheme.tertiary.copy(alpha = 0.12f),
+                                RoundedCornerShape(4.dp)).padding(horizontal = 4.dp, vertical = 1.dp))
+                    }
                 }
                 Spacer(Modifier.height(2.dp))
                 Text(
